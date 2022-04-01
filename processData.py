@@ -1,8 +1,20 @@
-import re 
+import re, nltk, string, TurkishStemmer
 import pandas as pd 
 import numpy as np 
 import fuzzywuzzy
 
+from sklearn.model_selection import train_test_split
+
+
+# Performance Metrics 
+from sklearn.metrics import mean_squared_error
+
+# PLOT 
+import matplotlib.pyplot as plt
+import seaborn as sns 
+
+
+pd.set_option("display.max_columns", None)
 
 """
 DOCUMENTATION 
@@ -12,7 +24,7 @@ This script aims to automize repetitive text processing jobs that might be usefu
 """
 
 
-class TestringtProcessor: 
+class TestringProcessor: 
     
     
     def getNumbersfromString(self, string, flag = False):
@@ -91,14 +103,120 @@ class TestringtProcessor:
         df.loc[rows_with_matches, column] = string_to_match
 
 
+
+
+class analyzeModel: 
+    
+    def plot_learning_curves(self, model, X, y):
+        
+        """
+        Obj : Objective is to decide whether the model is overfitting or underfitting 
+        
+        Plots learning curves : 
+        
+        y - axis : RMSE 
+        x - axis : Training Set Size 
+        """
+        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=10)
+        train_errors, val_errors = [], []
+        for m in range(1, len(X_train) + 1):
+            model.fit(X_train[:m], y_train[:m])
+            y_train_predict = model.predict(X_train[:m])
+            y_val_predict = model.predict(X_val)
+            train_errors.append(mean_squared_error(y_train[:m], y_train_predict))
+            val_errors.append(mean_squared_error(y_val, y_val_predict))
+
+        plt.plot(np.sqrt(train_errors), "r-+", linewidth=2, label="train")
+        plt.plot(np.sqrt(val_errors), "b-", linewidth=3, label="val")
+        plt.legend(loc="upper right", fontsize=14)   
+        plt.xlabel("Training set size", fontsize=14) 
+        plt.ylabel("RMSE", fontsize=14)              
+        
+
+
+
+class Textcan: 
+    
+    """
+    This class is prepared for NLP purposes 
+    """
+    
+    def __init__(self) -> None:
+        self.stopwordsAll = ["acaba","ama","aslında","az","bazı","belki","biri","birkaç","birşey","biz","bu","çok","çünkü","da","daha",
+                             "de","defa","diye","eğer","en","gibi","hem","hep","hepsi","her","hiç","için","ile","ise","kez","ki","kim","mı","mu","mi","nasıl",
+                             "ne","be","neden","nerde","nerede","nereye","niçin","nasıl","o","sanki","şey","siz","ben","şu","tüm","ve","veya","ya","yani"]
+    
+    
+    def preprocess(self,text):
+        """String Stripper
+        
+        - Strip the words 
+        - Remove Punctuations 
+        - Remove numbers
+         
+        """
+
+        text = text.lower() 
+        text = text.strip()
+        text = re.compile('<.*?>').sub(' ', text)
+        text = re.compile('[%s]' % re.escape(string.punctuation)).sub(' ', text)
+        text = re.sub('\s+', ' ', text)
+        text = re.sub(r'\[[0-9]*\]', ' ', text)
+        text = re.sub(r'[^\w\s]', '', str(text).lower().strip())
+        text = re.sub(r'\d', ' ', text)
+        text = re.sub(r'\s+', ' ', text)
+        return text
+    
+    
+    def turkishStemmerGit(self, text):
+        
+        stemmer = TurkishStemmer.TurkishStemmer()
+        stemmedword  = [stemmer.stem(word) for word in nltk.word_tokenize(text)]
+        return ' '.join(stemmedword)
+
+    
+    def stopword(self,string):
+        
+        a = [i for i in string.split() if i not in self.stopwordsAll]
+        return ' '.join(a)
+
+
+    def finalStep(self, string): 
+        
+        return self.turkishStemmerGit(self.stopword(self.preprocess(string)))
+    
+    
+class TimeReg: 
+    
+    
+    def __init__(self) -> None:
+        pass
+    
+    def laginvestigate(self, df, target_column): 
+        
+        df["Lag_1"] = df["target_column"].shift(1)
+        df = df.reindex(columns = [target_column, "Lag_1"])
+        
+        fig, ax = plt.subplots()
+        ax = sns.regplot(x = 'Lag_1', y = target_column, data = df, ci = None, scatter_kws= dict(color = '0.25'))
+        ax.set_aspect('equal')
+        ax.set_title('Lag plor of Target columns')
+        plt.show()
+    
+    def makelags(self, ts, lags, lead_time): 
+        
+        return pd.concat(
+            {
+                f'y_lag_{i}' : ts.shift(i) for i in range(lead_time, lags + lead_time)
+            },
+            axis = 1
+        )
+    
+    
     
 
-
-
-
-
 #### TEST #### 
-# t = TestringtProcessor()
+# t = TestringProcessor()
 # a = t.getNumbersfromString("abc123d")
 # print(a)
 #### TEST ####
