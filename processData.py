@@ -83,7 +83,7 @@ class TestringProcessor:
          
          To match mispelled word in the dataframe
         
-            
+             
         """
     
         # get a list of unique strings 
@@ -135,7 +135,7 @@ class analyzeModel:
 
 
 
-class Textcan: 
+class TextProcessor: 
     
     """
     This class is prepared for NLP purposes 
@@ -219,6 +219,10 @@ class TimeReg:
 # t = TestringProcessor()
 # a = t.getNumbersfromString("abc123d")
 # print(a)
+
+# t = TestringProcessor()
+# a = t.replace_matches_in_column()
+
 #### TEST ####
 
 
